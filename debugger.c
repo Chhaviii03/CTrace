@@ -72,7 +72,7 @@ int get_eip(pid_t pid)
 {
     struct user_regs_struct regs;
     ptrace(PTRACE_GETREGS, pid, 0, &regs);
-    return regs.eip;
+    return regs.rip;
 }
 
 //   debugger wait target stopped
@@ -105,8 +105,9 @@ void run_target(const char *name)
     }
 }
 
+
 // debugger get target's instruction with specified addr
-inline int get_instruction(pid_t pid, int addr)
+long get_instruction(pid_t pid, long addr)
 {
     return ptrace(PTRACE_PEEKTEXT, pid, (void*)addr, 0);
 }
@@ -114,11 +115,13 @@ inline int get_instruction(pid_t pid, int addr)
 void proc_ins_eip(pid_t pid)
 {
     procprint(
-            "current ins:%x, current eip:%x\n",
-            get_instruction(pid, get_eip(pid)),
-            get_eip(pid)
-    );
+    "current ins:%lx, current rip:%lx\n",
+    get_instruction(pid, get_eip(pid)),
+    get_eip(pid)
+);
+
 }
+
 
 void execute_singlestep(pid_t pid)
 {
@@ -147,7 +150,7 @@ void dance_on_breakpoint(pid_t pid, struct breakpoint_t *bps)
     struct user_regs_struct regs;
     ptrace(PTRACE_POKETEXT, pid, (void*)bps->addr, bps->ins);
     ptrace(PTRACE_GETREGS, pid, 0, &regs);
-    regs.eip -= 1;
+    regs.rip -= 1;
     ptrace(PTRACE_SETREGS, pid, 0, &regs);
     execute_singlestep(pid);
 
